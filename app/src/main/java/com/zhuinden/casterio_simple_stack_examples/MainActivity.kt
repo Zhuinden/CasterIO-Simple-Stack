@@ -21,8 +21,6 @@ class MainActivity : AppCompatActivity(), StateChanger {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setupClicks()
-
         backstackDelegate.setStateChanger(this)
     }
 
@@ -39,9 +37,5 @@ class MainActivity : AppCompatActivity(), StateChanger {
         // this is where we handle navigation events.
         // when the navigation event change is handled, the completion callback must be called.
         completionCallback.stateChangeComplete()
-    }
-
-    // handle button clicks
-    private fun setupClicks() {
     }
 }
