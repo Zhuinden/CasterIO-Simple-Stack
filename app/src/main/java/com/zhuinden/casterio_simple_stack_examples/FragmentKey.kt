@@ -16,3 +16,5 @@ abstract class FragmentKey: Parcelable {
         }
     }
 }
+
+fun <T: FragmentKey> Fragment.getKey(): T = arguments!!.getParcelable("KEY")
