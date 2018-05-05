@@ -16,7 +16,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         goToSecondFragment.onClick {
-            TODO()
+            (requireActivity() as MainActivity).backstack.goTo(SecondKey())
         }
     }
 }
