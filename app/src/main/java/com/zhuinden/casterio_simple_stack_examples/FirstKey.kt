@@ -1,11 +1,11 @@
 package com.zhuinden.casterio_simple_stack_examples
 
-import android.support.v4.app.Fragment
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class FirstKey(val clazz: String) : FragmentKey() {
-    constructor() : this(FirstKey::class.java.name)
+data class FirstKey(val clazz: String) : ViewKey() {
+    override val layoutId: Int
+        get() = R.layout.view_first
 
-    override fun createFragment(): Fragment = FirstFragment()
+    constructor() : this(FirstKey::class.java.name)
 }

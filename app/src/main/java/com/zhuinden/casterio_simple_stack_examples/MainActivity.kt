@@ -1,11 +1,10 @@
 package com.zhuinden.casterio_simple_stack_examples
 
 import android.os.Bundle
-import android.support.annotation.IdRes
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentTransaction
 import android.support.v7.app.AppCompatActivity
+import android.view.LayoutInflater
 import com.zhuinden.simplestack.*
+import kotlinx.android.synthetic.main.activity_main.*
 
 @Suppress("UNREACHABLE_CODE")
 class MainActivity : AppCompatActivity(), StateChanger {
@@ -32,16 +31,10 @@ class MainActivity : AppCompatActivity(), StateChanger {
         backstackDelegate.onRetainCustomNonConfigurationInstance()
 
     override fun onBackPressed() {
-        if(!backstackDelegate.onBackPressed()) { // calls backstack.goBack()
+        if (!backstackDelegate.onBackPressed()) { // calls backstack.goBack()
             super.onBackPressed()
         }
     }
-
-    fun FragmentTransaction.addFragment(@IdRes containerId: Int, key: FragmentKey) {
-        add(containerId, key.newFragment(), key.fragmentTag)
-    }
-
-    fun FragmentManager.findFragment(key: FragmentKey) = findFragmentByTag(key.fragmentTag)
 
     override fun handleStateChange(stateChange: StateChange, completionCallback: StateChanger.Callback) {
         // this is where we handle navigation events.
@@ -49,7 +42,7 @@ class MainActivity : AppCompatActivity(), StateChanger {
 
         // if the current state is already visible,
         // we *typically* don't need to manipulate what's active.
-        if(stateChange.topNewState<Any>() == stateChange.topPreviousState()) {
+        if (stateChange.topNewState<Any>() == stateChange.topPreviousState()) {
             completionCallback.stateChangeComplete()
             return
         }
@@ -59,45 +52,62 @@ class MainActivity : AppCompatActivity(), StateChanger {
         // [A, B, C] -> [A, B]
         // [A, B, C] -> [D]
 
-        // for this, we must track what Fragments exist in the backstack.
+        // let's replace the Fragment-based implementation with Compound Viewgroups!
 
-        val fragmentManager = supportFragmentManager
+        // steps:
+        // 1.) inflate the new view
+        // 2.) persist state of the current view
+        // 3.) restore the state of the new view (f.ex. back nav)
+        // 4.) add the new view to container
+        // 5.) animate transition
+        // 6.) remove current view
+        val newKey = stateChange.topNewState<ViewKey>()
+        val inflater = LayoutInflater.from(stateChange.createContext(this, newKey))
 
-        val newStates = stateChange.getNewState<FragmentKey>()
-        val previousStates = stateChange.getPreviousState<FragmentKey>()
-        val topNewState = stateChange.topNewState<FragmentKey>()
+        val previousView = container.getChildAt(0)
+        val newView = inflater.inflate(newKey.layoutId, container, false)
+        backstackDelegate.restoreViewFromState(newView)
+        backstackDelegate.persistViewToState(previousView)
+        container.addView(newView)
 
-        val transaction = fragmentManager.beginTransaction()
-        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE) // fade anim
-
-        // first, we must remove fragments that are no longer in the stack.
-        for(previousState in previousStates) {
-            val fragment = fragmentManager.findFragment(previousState)
-            if(fragment != null && !newStates.contains(previousState)) {
-                transaction.remove(fragment)
-            }
+        val direction = stateChange.direction
+        if (previousView == null) {
+            completionCallback.stateChangeComplete()
+            return
         }
 
-        // then, we must hide the non-top fragments that are in the manager.
-        // if the new top doesn't exist, we should create it.
-        // if it is hidden, we should show it.
-        for(newState in newStates) {
-            val fragment = fragmentManager.findFragment(newState)
-            if(newState == topNewState) {
-                if(fragment == null) {
-                    transaction.addFragment(R.id.container, newState)
-                } else if(fragment.isHidden) {
-                    transaction.show(fragment)
-                }
-            } else { // fragment that exists, but isn't currently showing. They should be hidden.
-                if(fragment != null && !fragment.isHidden) {
-                    transaction.hide(fragment)
-                }
+        newView.waitForMeasure { view, width, height ->
+            if (direction == StateChange.REPLACE) {
+                animateTogether(
+                    newView.animateFadeIn(),
+                    previousView.animateFadeOut()
+                ).apply {
+                    addListener(createAnimatorListener(
+                        onAnimationEnd = {
+                            container.removeView(previousView)
+                            completionCallback.stateChangeComplete()
+                        }
+                    ))
+                }.start()
+            } else {
+                animateTogether(
+                    newView.animateTranslateXBy(
+                        from = direction * width,
+                        by = (-1) * direction * width
+                    ),
+                    previousView.animateTranslateXBy(
+                        from = 0,
+                        by = (-1) * direction * width
+                    )
+                ).apply {
+                    addListener(createAnimatorListener(
+                        onAnimationEnd = {
+                            container.removeView(previousView)
+                            completionCallback.stateChangeComplete()
+                        }
+                    ))
+                }.start()
             }
         }
-
-        transaction.commitAllowingStateLoss() // never trust commit() :)
-
-        completionCallback.stateChangeComplete()
     }
 }
