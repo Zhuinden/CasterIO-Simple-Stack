@@ -10,7 +10,6 @@ import android.view.ViewTreeObserver
 import com.bartoszlipinski.viewpropertyobjectanimator.ViewPropertyObjectAnimator
 import java.util.*
 
-
 inline fun <reified T> List<T>.asString(): String = Arrays.toString(this.toTypedArray())
 
 tailrec fun <T : Activity> Context.findActivity(): T {
@@ -19,7 +18,7 @@ tailrec fun <T : Activity> Context.findActivity(): T {
         return this as T
     } else {
         if (this is ContextWrapper) {
-            return this.baseContext.findActivity<T>()
+            return this.baseContext.findActivity()
         }
         throw IllegalStateException("The context does not contain Activity in the context chain!")
     }
@@ -72,12 +71,8 @@ inline fun createAnimatorListener(
     override fun onAnimationStart(animation: Animator) = onAnimationStart(animation)
 }
 
-fun View.animateTranslateXBy(from: Int, by: Int, duration: Long = 325): Animator = run {
-    translationX = from.toFloat()
-    objectAnimate()
-        .translationXBy(by.toFloat())
-        .setDuration(duration)
-        .get()
+inline fun AnimatorSet.onAnimationEnd(crossinline onAnimationEnd: (Animator) -> Unit): AnimatorSet = apply {
+    addListener(createAnimatorListener(onAnimationEnd = onAnimationEnd))
 }
 
 fun View.animateFadeOut(duration: Long = 325): Animator = run {
@@ -95,3 +90,25 @@ fun View.animateFadeIn(duration: Long = 325): Animator = run {
         .setDuration(duration)
         .get()
 }
+
+private fun View.animateTranslateXBy(from: Int, by: Int, duration: Long = 325): Animator = run {
+    translationX = from.toFloat()
+    objectAnimate()
+        .translationXBy(by.toFloat())
+        .setDuration(duration)
+        .get()
+}
+
+fun View.animateTranslateIn(width: Int, direction: Int, duration: Long = 325): Animator =
+    animateTranslateXBy(
+        from = direction * width,
+        by = (-1) * direction * width,
+        duration = duration
+    )
+
+fun View.animateTranslateOut(width: Int, direction: Int, duration: Long = 325): Animator =
+    animateTranslateXBy(
+        from = 0,
+        by = (-1) * direction * width,
+        duration = duration
+    )

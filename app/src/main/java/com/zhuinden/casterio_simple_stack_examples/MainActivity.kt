@@ -77,37 +77,17 @@ class MainActivity : AppCompatActivity(), StateChanger {
         }
 
         newView.waitForMeasure { view, width, height ->
-            if (direction == StateChange.REPLACE) {
-                animateTogether(
-                    newView.animateFadeIn(),
-                    previousView.animateFadeOut()
-                ).apply {
-                    addListener(createAnimatorListener(
-                        onAnimationEnd = {
-                            container.removeView(previousView)
-                            completionCallback.stateChangeComplete()
-                        }
-                    ))
-                }.start()
-            } else {
-                animateTogether(
-                    newView.animateTranslateXBy(
-                        from = direction * width,
-                        by = (-1) * direction * width
-                    ),
-                    previousView.animateTranslateXBy(
-                        from = 0,
-                        by = (-1) * direction * width
-                    )
-                ).apply {
-                    addListener(createAnimatorListener(
-                        onAnimationEnd = {
-                            container.removeView(previousView)
-                            completionCallback.stateChangeComplete()
-                        }
-                    ))
-                }.start()
-            }
+            animateTogether(*when {
+                direction == StateChange.REPLACE -> {
+                    arrayOf(newView.animateFadeIn(), previousView.animateFadeOut())
+                }
+                else -> {
+                    arrayOf(newView.animateTranslateIn(width, direction), previousView.animateTranslateOut(width, direction))
+                }
+            }).onAnimationEnd {
+                container.removeView(previousView)
+                completionCallback.stateChangeComplete()
+            }.start()
         }
     }
 }
