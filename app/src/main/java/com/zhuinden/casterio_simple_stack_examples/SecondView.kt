@@ -21,6 +21,8 @@ class SecondView : ConstraintLayout {
     }
 
     fun init(context: Context) {
-        val secondKey = Backstack.getKey<SecondKey>(context)
+        if(!isInEditMode) {
+            val secondKey = Backstack.getKey<SecondKey>(context)
+        }
     }
 }
