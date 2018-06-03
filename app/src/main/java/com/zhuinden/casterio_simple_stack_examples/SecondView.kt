@@ -4,25 +4,16 @@ import android.content.Context
 import android.support.annotation.AttrRes
 import android.support.constraint.ConstraintLayout
 import android.util.AttributeSet
-import com.zhuinden.simplestack.Backstack
 
 class SecondView : ConstraintLayout {
-    constructor(context: Context) : super(context) {
-        init(context)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        init(context)
-    }
-
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet?,
-                @AttrRes defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        init(context)
-    }
+                @AttrRes defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-    fun init(context: Context) {
+    init {
         if(!isInEditMode) {
-            val secondKey = Backstack.getKey<SecondKey>(context)
+            val secondKey = getKey<SecondKey>()
         }
     }
 }

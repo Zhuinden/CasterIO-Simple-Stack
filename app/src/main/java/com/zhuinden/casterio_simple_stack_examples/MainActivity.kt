@@ -2,25 +2,17 @@ package com.zhuinden.casterio_simple_stack_examples
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.view.LayoutInflater
-import com.zhuinden.simplestack.*
+import com.zhuinden.simplestack.History
+import com.zhuinden.simplestack.StateChange
+import com.zhuinden.simplestack.StateChanger
+import com.zhuinden.simplestack.navigator.DefaultStateChanger
+import com.zhuinden.simplestack.navigator.Navigator
 import kotlinx.android.synthetic.main.activity_main.*
+import org.jetbrains.anko.sdk15.listeners.onClick
 
 @Suppress("UNREACHABLE_CODE")
 class MainActivity : AppCompatActivity(), StateChanger {
-    private lateinit var backstackDelegate: BackstackDelegate
-    lateinit var backstack: Backstack
-        private set
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        backstackDelegate = BackstackDelegate()
-        backstackDelegate.onCreate(savedInstanceState,
-            lastCustomNonConfigurationInstance,
-            History.single(FirstKey()))
-        backstackDelegate.registerForLifecycleCallbacks(this)
-
-        backstack = backstackDelegate.backstack
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -30,19 +22,19 @@ class MainActivity : AppCompatActivity(), StateChanger {
             setDisplayHomeAsUpEnabled(false)
         }
 
-        backstackDelegate.setStateChanger(this)
-    }
+        Navigator.configure()
+            .setStateChanger(DefaultStateChanger.configure()
+                .setExternalStateChanger(this)
+                .create(this, container))
+            .install(this, container, History.of(FirstKey()))
 
-    override fun onRetainCustomNonConfigurationInstance() =
-        backstackDelegate.onRetainCustomNonConfigurationInstance()
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        super.onSaveInstanceState(outState)
-        backstackDelegate.persistViewToState(container.getChildAt(0))
+        buttonToolbarUp.onClick {
+            backstack.goBack()
+        }
     }
 
     override fun onBackPressed() {
-        if(!backstackDelegate.onBackPressed()) { // calls backstack.goBack()
+        if(!backstack.goBack()) {
             super.onBackPressed()
         }
     }
@@ -58,47 +50,15 @@ class MainActivity : AppCompatActivity(), StateChanger {
             return
         }
 
-        // we must generally ensure that the following scenarios work as expected:
-        // [A, B] -> [A, B, C]
-        // [A, B, C] -> [A, B]
-        // [A, B, C] -> [D]
+        // now everything is actually handled for us by DefaultStateChanger.
+        // but we might want to set things here, like toolbar text, up arrow visibility, etc.
+        // so we still need to set this as a state changer.
+        // we can set this as an "external state changer" on the DefaultStateChanger.
+        val newState = stateChange.getNewState<ViewKey>()
+        val topKey = stateChange.topNewState<ViewKey>()
+        textToolbar.setText(topKey.toolbarText)
 
-        // steps:
-        // 1.) inflate the new view
-        // 2.) persist state of the current view (one in the container)
-        // 3.) restore the state of the new view (f.ex. back nav)
-        // 4.) add the new view to container
-        // 5.) wait for measure, animate transition
-        // 6.) remove current view
-        val newKey = stateChange.topNewState<ViewKey>()
-        val newView = LayoutInflater.from(stateChange.createContext(this, newKey))
-            .inflate(newKey.layoutId, container, false)
-
-        val previousView = container.getChildAt(0)
-        backstackDelegate.persistViewToState(previousView)
-        backstackDelegate.restoreViewFromState(newView)
-
-        container.addView(newView)
-
-        if(previousView == null) {
-            completionCallback.stateChangeComplete()
-            return
-        }
-
-        val direction = stateChange.direction
-        newView.waitForMeasure { view, width, height ->
-            animateTogether(*when {
-                direction == StateChange.REPLACE -> {
-                    arrayOf(previousView.animateFadeOut(), newView.animateFadeIn())
-                }
-                else -> { // backward, forward
-                    arrayOf(previousView.animateTranslateOut(width, direction),
-                        newView.animateTranslateIn(width, direction))
-                }
-            }).onAnimationEnd {
-                container.removeView(previousView)
-                completionCallback.stateChangeComplete()
-            }.start()
-        }
+        buttonToolbarUp.showIf { newState.size > 1 }
+        completionCallback.stateChangeComplete()
     }
 }

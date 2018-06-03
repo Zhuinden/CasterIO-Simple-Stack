@@ -8,6 +8,10 @@ import android.content.ContextWrapper
 import android.view.View
 import android.view.ViewTreeObserver
 import com.bartoszlipinski.viewpropertyobjectanimator.ViewPropertyObjectAnimator
+import com.zhuinden.simplestack.Backstack
+import com.zhuinden.simplestack.History
+import com.zhuinden.simplestack.StateChange
+import com.zhuinden.simplestack.navigator.Navigator
 import java.util.*
 
 inline fun <reified T> List<T>.asString() : String = Arrays.toString(this.toTypedArray())
@@ -114,3 +118,45 @@ fun View.animateTranslateOut(width: Int, direction: Int, duration: Long = 325): 
         by = (-1) * direction * width,
         duration = duration
     )
+
+inline fun <T: View> T.showIf(predicate: T.() -> Boolean) : T = this.apply {
+    if(predicate(this)) {
+        show()
+    } else {
+        hide()
+    }
+    return this
+}
+
+fun View.show() {
+    this.visibility = View.VISIBLE
+}
+
+fun View.hide() {
+    this.visibility = View.GONE
+}
+
+// navigation helpers
+fun View.goTo(key: ViewKey) {
+    backstack.goTo(key)
+}
+
+fun View.goBack() {
+    backstack.goBack()
+}
+
+val View.backstack: Backstack
+    get() = Navigator.getBackstack(context)
+
+fun View.setHistory(direction: Int, vararg keys: ViewKey) {
+    backstack.setHistory(History.of(keys), direction)
+}
+
+fun View.setHistory(vararg keys: ViewKey) {
+    setHistory(StateChange.REPLACE, *keys)
+}
+
+fun <T: ViewKey> View.getKey() = Backstack.getKey<T>(context)
+
+val Activity.backstack: Backstack
+    get() = Navigator.getBackstack(this)

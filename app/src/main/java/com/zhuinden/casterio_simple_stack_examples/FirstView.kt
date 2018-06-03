@@ -10,27 +10,14 @@ import kotlinx.android.synthetic.main.view_first.view.*
 import org.jetbrains.anko.sdk15.listeners.onClick
 
 class FirstView : ConstraintLayout, Bundleable {
-    constructor(context: Context) : super(context) {
-        init(context)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        init(context)
-    }
-
-    constructor(context: Context, attrs: AttributeSet?,
-                @AttrRes defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        init(context)
-    }
-
-    fun init(context: Context) {
-        // do something
-    }
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?, @AttrRes defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     override fun onFinishInflate() {
         super.onFinishInflate()
         goToSecondView.onClick {
-            context.findActivity<MainActivity>().backstack.goTo(SecondKey())
+            goTo(SecondKey())
         }
     }
 

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CasterIO-Simple-Stack-Examples</string>
+    <string name="first_view_toolbar_text">First View</string>
+    <string name="second_view_toolbar_text">Second View</string>
 </resources>
