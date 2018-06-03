@@ -24,6 +24,12 @@ class MainActivity : AppCompatActivity(), StateChanger {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        setSupportActionBar(toolbar)
+        supportActionBar?.run {
+            setDisplayShowTitleEnabled(false)
+            setDisplayHomeAsUpEnabled(false)
+        }
+
         backstackDelegate.setStateChanger(this)
     }
 
